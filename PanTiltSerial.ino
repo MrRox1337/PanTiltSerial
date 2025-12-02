@@ -1,5 +1,9 @@
 #include <Servo.h>
 
+#define TILT_MAX 120.00
+#define PAN_MAX 170.00
+#define BAUD_RATE 9600
+
 // Create two servo objects
 Servo servo1; // Joint 1 (Pan)
 Servo servo2; // Joint 2 (Tilt)
@@ -20,17 +24,17 @@ void setup() {
   servo2.attach(servo2Pin);
 
   // Start the serial communication
-  Serial.begin(9600);
+  Serial.begin(BAUD_RATE);
   Serial.println("Pan-Tilt Serial Control Ready.");
   Serial.println("Enter 'pan tilt' (e.g., '0.5 -0.25'):");
   Serial.println("Input range: -1.0 to 1.0 for both.");
   Serial.println("Center is '0.0 0.0' (maps to 85 60)");
 
   // Set initial position (Center)
-  // 85 is center for pan (0-170)
-  // 60 is center for tilt (0-120)
-  servo1.write(85);
-  servo2.write(60);
+  // PAN_MAX / 2 is center for pan (0-PAN_MAX)
+  // TILT_MAX / 2 is center for tilt (0-TILT_MAX)
+  servo1.write(PAN_MAX / 2);
+  servo2.write(TILT_MAX / 2);
 }
 
 void loop() {
@@ -51,10 +55,10 @@ void loop() {
 
       // Map the -1.0 to 1.0 range to the desired angle range
       // Pan: -1.0 -> 0, 0.0 -> 85, 1.0 -> 170
-      int pan_angle = (int)(((pan_input + 1.0) / 2.0) * 170.0);
+      int pan_angle = (int)(((pan_input + 1.0) / 2.0) * PAN_MAX);
       
       // Tilt: -1.0 -> 0, 0.0 -> 60, 1.0 -> 120
-      int tilt_angle = (int)(((tilt_input + 1.0) / 2.0) * 120.0);
+      int tilt_angle = (int)(TILT_MAX * (1.0 - ((tilt_input + 1.0) / 2.0)));
 
       // Write the values to the servos
       servo1.write(pan_angle);

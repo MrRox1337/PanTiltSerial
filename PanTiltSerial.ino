@@ -65,14 +65,7 @@ void loop() {
       servo2.write(tilt_angle);
 
       // Print back what it received and the resulting angle
-      Serial.print("Input: ");
-      Serial.print(pan_input, 4); // Print float with 4 decimal places
-      Serial.print(", ");
-      Serial.print(tilt_input, 4);
-      Serial.print(" | Mapped to -> Pan (Pin 3): ");
-      Serial.print(pan_angle);
-      Serial.print(", Tilt (Pin 2): ");
-      Serial.println(tilt_angle);
+      Serial.print("OK");
     }
   }
 }

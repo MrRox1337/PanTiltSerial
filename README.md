@@ -31,8 +31,8 @@ Default pins (change in `config.h`):
 
 | Axis     | Arduino Pin       | Config key |
 | :------- | :---------------- | :--------- |
-| **Pan**  | **Digital Pin 3** | `PAN_PIN`  |
-| **Tilt** | **Digital Pin 2** | `TILT_PIN` |
+| **Pan**  | **Digital Pin 5** | `PAN_PIN`  |
+| **Tilt** | **Digital Pin 6** | `TILT_PIN` |
 
 ---
 
@@ -75,7 +75,7 @@ The input format is: `[pan_value] [tilt_value]\n` (e.g., `0.5 -0.25`).
 
 #### Input-to-Angle Mapping
 
-| Input Value | Pan Angle (Pin 3) | Tilt Angle (Pin 2) | Notes                                       |
+| Input Value | Pan Angle (Pin 5) | Tilt Angle (Pin 6) | Notes                                       |
 | :---------- | :---------------- | :----------------- | :------------------------------------------ |
 | **1.0**     | **170°**          | **0°**             | Maximum extent (Pan), Minimum extent (Tilt) |
 | **0.0**     | **85°**           | **60°**            | **Center Position** (Pan and Tilt)          |

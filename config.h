@@ -30,8 +30,11 @@
 // ---------------------------------------------------------------------------
 //  Pins
 // ---------------------------------------------------------------------------
-#define PAN_PIN   3
-#define TILT_PIN  2
+// Any digital pin works: the Servo library generates pulses in software
+// (Timer1), not with hardware PWM. Avoid 0/1 (Serial). Note that on the Uno
+// the Servo library disables analogWrite() on pins 9 and 10.
+#define PAN_PIN   5
+#define TILT_PIN  6
 
 // ---------------------------------------------------------------------------
 //  Angle limits (degrees, 0-180)

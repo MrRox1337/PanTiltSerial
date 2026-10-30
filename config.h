@@ -8,7 +8,7 @@
 // ---------------------------------------------------------------------------
 //  Serial
 // ---------------------------------------------------------------------------
-#define BAUD_RATE         9600
+#define BAUD_RATE         115200
 
 // Longest accepted command line (characters, excluding the line ending).
 // Longer lines are discarded.

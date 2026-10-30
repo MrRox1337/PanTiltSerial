@@ -42,7 +42,7 @@ All tunables live in [`config.h`](config.h). Edit it and re-upload; there's no n
 
 | Key                                   | Default       | Purpose                                                 |
 | :------------------------------------ | :------------ | :------------------------------------------------------ |
-| `BAUD_RATE`                           | `9600`        | Serial speed                                            |
+| `BAUD_RATE`                           | `115200`      | Serial speed                                            |
 | `PAN_MIN_DEG` / `PAN_MAX_DEG`         | `0` / `170`   | Pan angle range (degrees)                               |
 | `TILT_MIN_DEG` / `TILT_MAX_DEG`       | `0` / `120`   | Tilt angle range (degrees)                              |
 | `PAN_INVERT` / `TILT_INVERT`          | `0` / `1`     | Reverse an axis' direction                              |
@@ -65,7 +65,7 @@ Upload the `PanTiltSerial.ino` sketch to your Arduino board.
 
 ### 2. Configure Serial Monitor
 
-Open the Arduino Serial Monitor and set the **baud rate** to **9600**.
+Open the Arduino Serial Monitor and set the **baud rate** to **115200**.
 
 ### 3. Send Commands
 

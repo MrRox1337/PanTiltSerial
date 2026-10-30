@@ -1,71 +1,158 @@
+// Pan-Tilt Serial Control
+// Receives "pan tilt" lines with normalized values (-1.0 to 1.0) and drives
+// two servos. All tunables live in config.h.
+
 #include <Servo.h>
+#include <math.h>
+#include <stdlib.h>
+#include "config.h"
 
-#define TILT_MAX 120.00
-#define PAN_MAX 170.00
-#define BAUD_RATE 9600
+static_assert(PAN_MIN_DEG >= 0.0f && PAN_MAX_DEG <= 180.0f && PAN_MIN_DEG < PAN_MAX_DEG,
+              "Pan limits must satisfy 0 <= PAN_MIN_DEG < PAN_MAX_DEG <= 180");
+static_assert(TILT_MIN_DEG >= 0.0f && TILT_MAX_DEG <= 180.0f && TILT_MIN_DEG < TILT_MAX_DEG,
+              "Tilt limits must satisfy 0 <= TILT_MIN_DEG < TILT_MAX_DEG <= 180");
+static_assert(SERVO_MIN_US < SERVO_MAX_US, "SERVO_MIN_US must be less than SERVO_MAX_US");
+static_assert(LINE_BUFFER_SIZE >= 8, "LINE_BUFFER_SIZE is too small");
 
-// Create two servo objects
-Servo servo1; // Joint 1 (Pan)
-Servo servo2; // Joint 2 (Tilt)
+struct Axis {
+  Servo servo;
+  uint8_t pin;
+  float minDeg;
+  float maxDeg;
+  bool invert;
+  int lastUs = -1;  // last pulse written, -1 = none yet
 
-// Define the pins
-const int servo1Pin = 3;
-const int servo2Pin = 2;
+  Axis(uint8_t pin, float minDeg, float maxDeg, bool invert)
+    : pin(pin), minDeg(minDeg), maxDeg(maxDeg), invert(invert) {}
 
-void writeServo(Servo servo, int pin, int angle) {
-  servo.attach(pin);
-  servo.write(angle);
-  servo.detach();
+  // Map a normalized input (-1.0 to 1.0) to degrees within this axis' limits.
+  float toDegrees(float input) const {
+    input = constrain(input, -1.0f, 1.0f);
+    if (invert) input = -input;
+    return minDeg + (input + 1.0f) * 0.5f * (maxDeg - minDeg);
+  }
+
+  void begin(float homeInput) {
+    lastUs = -1;
+    servo.attach(pin, SERVO_MIN_US, SERVO_MAX_US);
+    moveTo(homeInput);
+  }
+
+  void moveTo(float input) {
+    const float deg = toDegrees(input);
+    const int us = (int)lroundf(SERVO_MIN_US + deg * ((SERVO_MAX_US - SERVO_MIN_US) / 180.0f));
+    if (us == lastUs) return;  // skip redundant writes
+    servo.writeMicroseconds(us);
+    lastUs = us;
+  }
+};
+
+static Axis pan (PAN_PIN,  PAN_MIN_DEG,  PAN_MAX_DEG,  PAN_INVERT  != 0);
+static Axis tilt(TILT_PIN, TILT_MIN_DEG, TILT_MAX_DEG, TILT_INVERT != 0);
+
+static char lineBuf[LINE_BUFFER_SIZE + 1];
+static uint8_t lineLen = 0;
+static bool lineOverflow = false;
+
+static inline bool isNumberStart(char c) {
+  return (c >= '0' && c <= '9') || c == '-' || c == '+' || c == '.';
 }
 
+// Find and parse the next number in *p, skipping any non-numeric characters
+// (so "0.5 -0.2", "0.5,-0.2" and "P0.5 T-0.2" all work). Advances *p.
+static bool nextNumber(const char **p, float *out) {
+  const char *s = *p;
+  while (*s) {
+    if (isNumberStart(*s)) {
+      char *end;
+      const double v = strtod(s, &end);
+      if (end != s) {
+        *p = end;
+        if (isnan(v) || isinf(v)) return false;
+        *out = (float)v;
+        return true;
+      }
+    }
+    ++s;
+  }
+  *p = s;
+  return false;
+}
+
+static void reply(const char *msg) {
+#if ACK_NEWLINE
+  Serial.println(msg);
+#else
+  Serial.print(msg);
+#endif
+}
+
+static void handleLine(const char *line) {
+  float panIn, tiltIn;
+  const char *p = line;
+  if (nextNumber(&p, &panIn) && nextNumber(&p, &tiltIn)) {
+    pan.moveTo(panIn);
+    tilt.moveTo(tiltIn);
+    reply(ACK_STRING);
+  }
+#if ENABLE_ERROR_REPLY
+  else {
+    reply(ERROR_STRING);
+  }
+#endif
+}
+
+// Non-blocking line reader: accepts "\n", "\r" or "\r\n" line endings.
+static void pollSerial() {
+  while (Serial.available() > 0) {
+    const char c = (char)Serial.read();
+
+    if (c == '\n' || c == '\r') {
+      if (lineOverflow) {
+        lineOverflow = false;
+#if ENABLE_ERROR_REPLY
+        reply(ERROR_STRING);
+#endif
+      } else if (lineLen > 0) {
+        lineBuf[lineLen] = '\0';
+        handleLine(lineBuf);
+      }
+      lineLen = 0;
+    } else if (lineLen < LINE_BUFFER_SIZE) {
+      lineBuf[lineLen++] = c;
+    } else {
+      lineOverflow = true;  // drop the rest of this line
+    }
+  }
+}
+
+#if PRINT_BANNER
+static void printBanner() {
+  Serial.println(F("Pan-Tilt Serial Control Ready."));
+  Serial.println(F("Enter 'pan tilt' (e.g., '0.5 -0.25'):"));
+  Serial.println(F("Input range: -1.0 to 1.0 for both."));
+  Serial.print(F("Home is '"));
+  Serial.print(PAN_HOME, 1);
+  Serial.print(' ');
+  Serial.print(TILT_HOME, 1);
+  Serial.print(F("' (maps to "));
+  Serial.print(pan.toDegrees(PAN_HOME), 1);
+  Serial.print(' ');
+  Serial.print(tilt.toDegrees(TILT_HOME), 1);
+  Serial.println(F(" deg)"));
+}
+#endif
+
 void setup() {
-  // Attach the servos to their respective pins
-  servo1.attach(servo1Pin);
-  servo2.attach(servo2Pin);
+  pan.begin(PAN_HOME);
+  tilt.begin(TILT_HOME);
 
-  // Start the serial communication
   Serial.begin(BAUD_RATE);
-  Serial.println("Pan-Tilt Serial Control Ready.");
-  Serial.println("Enter 'pan tilt' (e.g., '0.5 -0.25'):");
-  Serial.println("Input range: -1.0 to 1.0 for both.");
-  Serial.println("Center is '0.0 0.0' (maps to 85 60)");
-
-  // Set initial position (Center)
-  // PAN_MAX / 2 is center for pan (0-PAN_MAX)
-  // TILT_MAX / 2 is center for tilt (0-TILT_MAX)
-  servo1.write(PAN_MAX / 2);
-  servo2.write(TILT_MAX / 2);
+#if PRINT_BANNER
+  printBanner();
+#endif
 }
 
 void loop() {
-  // Check if there is data available to read from serial
-  if (Serial.available() > 0) {
-    // Read the first float (pan for servo 1)
-    float pan_input = Serial.parseFloat();
-    
-    // Read the second float (tilt for servo 2)
-    float tilt_input = Serial.parseFloat();
-
-    // Check if the newline character is next, which signifies the end of the input
-    if (Serial.read() == '\n') {
-      
-      // Constrain the input values to be within the -1.0 to 1.0 range
-      pan_input = constrain(pan_input, -1.0, 1.0);
-      tilt_input = constrain(tilt_input, -1.0, 1.0);
-
-      // Map the -1.0 to 1.0 range to the desired angle range
-      // Pan: -1.0 -> 0, 0.0 -> 85, 1.0 -> 170
-      int pan_angle = (int)(((pan_input + 1.0) / 2.0) * PAN_MAX);
-      
-      // Tilt: -1.0 -> 0, 0.0 -> 60, 1.0 -> 120
-      int tilt_angle = (int)(TILT_MAX * (1.0 - ((tilt_input + 1.0) / 2.0)));
-
-      // Write the values to the servos
-      servo1.write(pan_angle);
-      servo2.write(tilt_angle);
-
-      // Print back what it received and the resulting angle
-      Serial.print("OK");
-    }
-  }
+  pollSerial();
 }

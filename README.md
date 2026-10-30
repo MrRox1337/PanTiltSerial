@@ -10,9 +10,9 @@ The center position is defined by sending **`0.0 0.0`**.
 
 ## Authors
 
+- **Aman Mishra**
 - **Dr. Judhi Prasetyo**
 - **Dr. Sameer Kishore**
-- **Aman Mishra**
 
 ---
 
@@ -27,19 +27,33 @@ The center position is defined by sending **`0.0 0.0`**.
 
 ### Pin Assignments
 
-The code is configured to use the following pins:
+Default pins (change in `config.h`):
 
-| Axis     | Servo Object | Arduino Pin       |
-| :------- | :----------- | :---------------- |
-| **Pan**  | `servo1`     | **Digital Pin 3** |
-| **Tilt** | `servo2`     | **Digital Pin 2** |
+| Axis     | Arduino Pin       | Config key |
+| :------- | :---------------- | :--------- |
+| **Pan**  | **Digital Pin 3** | `PAN_PIN`  |
+| **Tilt** | **Digital Pin 2** | `TILT_PIN` |
 
-### Constants and Limits
+---
 
-The maximum range for the mechanism is defined by constants in the code:
+## Configuration (`config.h`)
 
-- `PAN_MAX`: **170.00** degrees (Pan axis range)
-- `TILT_MAX`: **120.00** degrees (Tilt axis range)
+All tunables live in [`config.h`](config.h). Edit it and re-upload; there's no need to touch the sketch.
+
+| Key                                   | Default       | Purpose                                                 |
+| :------------------------------------ | :------------ | :------------------------------------------------------ |
+| `BAUD_RATE`                           | `9600`        | Serial speed                                            |
+| `PAN_MIN_DEG` / `PAN_MAX_DEG`         | `0` / `170`   | Pan angle range (degrees)                               |
+| `TILT_MIN_DEG` / `TILT_MAX_DEG`       | `0` / `120`   | Tilt angle range (degrees)                              |
+| `PAN_INVERT` / `TILT_INVERT`          | `0` / `1`     | Reverse an axis' direction                              |
+| `PAN_HOME` / `TILT_HOME`              | `0.0` / `0.0` | Boot position in normalized units                       |
+| `SERVO_MIN_US` / `SERVO_MAX_US`       | `544`/`2400`  | Pulse width for 0°/180° (Servo library defaults)        |
+| `ACK_STRING` / `ACK_NEWLINE`          | `"OK"` / `0`  | Reply after each command, with or without a line ending |
+| `ENABLE_ERROR_REPLY` / `ERROR_STRING` | `0` / `"ERR"` | Reply to unparseable or overlong lines                  |
+| `LINE_BUFFER_SIZE`                    | `32`          | Max command length                                      |
+| `PRINT_BANNER`                        | `1`           | Print usage text on boot                                |
+
+Invalid limits are caught at compile time.
 
 ---
 
@@ -55,7 +69,7 @@ Open the Arduino Serial Monitor and set the **baud rate** to **9600**.
 
 ### 3. Send Commands
 
-The system expects two space-separated floating-point numbers followed by a newline character. Both values must be within the range **-1.0 to 1.0**.
+The system expects two floating-point numbers followed by a line ending (`\n`, `\r` or `\r\n`). Values outside **-1.0 to 1.0** are clamped. Separators are flexible, so `0.5 -0.25`, `0.5,-0.25` and `P0.5 T-0.25` all work.
 
 The input format is: `[pan_value] [tilt_value]\n` (e.g., `0.5 -0.25`).
 
@@ -72,7 +86,7 @@ The input format is: `[pan_value] [tilt_value]\n` (e.g., `0.5 -0.25`).
 
 ### Example Serial Output
 
-After sending an input like `0.5 -0.25`, the Arduino will print the resulting angles:
+After each valid command (e.g. `0.5 -0.25`) the Arduino replies with `ACK_STRING`. By default that's `OK` with no line ending:
 
 ```
 OK

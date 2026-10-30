@@ -13,6 +13,7 @@ static_assert(TILT_MIN_DEG >= 0.0f && TILT_MAX_DEG <= 180.0f && TILT_MIN_DEG < T
               "Tilt limits must satisfy 0 <= TILT_MIN_DEG < TILT_MAX_DEG <= 180");
 static_assert(SERVO_MIN_US < SERVO_MAX_US, "SERVO_MIN_US must be less than SERVO_MAX_US");
 static_assert(LINE_BUFFER_SIZE >= 8, "LINE_BUFFER_SIZE is too small");
+static_assert(SERVO_HOLD_MS >= 40, "SERVO_HOLD_MS must cover at least two 20 ms servo frames");
 
 struct Axis {
   Servo servo;
@@ -20,7 +21,8 @@ struct Axis {
   float minDeg;
   float maxDeg;
   bool invert;
-  int lastUs = -1;  // last pulse written, -1 = none yet
+  int lastUs = -1;               // last pulse written, -1 = none yet
+  unsigned long lastMoveMs = 0;  // millis() of the last new target
 
   Axis(uint8_t pin, float minDeg, float maxDeg, bool invert)
     : pin(pin), minDeg(minDeg), maxDeg(maxDeg), invert(invert) {}
@@ -33,17 +35,38 @@ struct Axis {
   }
 
   void begin(float homeInput) {
-    lastUs = -1;
-    servo.attach(pin, SERVO_MIN_US, SERVO_MAX_US);
+    // Drive the pin LOW so the servo sees a clean line until the first pulse.
+    pinMode(pin, OUTPUT);
+    digitalWrite(pin, LOW);
     moveTo(homeInput);
   }
 
   void moveTo(float input) {
     const float deg = toDegrees(input);
     const int us = (int)lroundf(SERVO_MIN_US + deg * ((SERVO_MAX_US - SERVO_MIN_US) / 180.0f));
-    if (us == lastUs) return;  // skip redundant writes
+    // Skip redundant writes; a repeat while detached re-attaches (re-asserts
+    // the position if the axis sagged).
+    if (us == lastUs && servo.attached()) return;
+    // Set the pulse width before attaching so the very first pulse is correct
+    // (the library stores it even while detached).
     servo.writeMicroseconds(us);
+    if (!servo.attached()) servo.attach(pin, SERVO_MIN_US, SERVO_MAX_US);
     lastUs = us;
+    lastMoveMs = millis();
+  }
+
+  // Detach once the servo has had SERVO_HOLD_MS to reach its target.
+  void update(unsigned long now) {
+#if DETACH_WHEN_IDLE
+    if (servo.attached() && now - lastMoveMs >= SERVO_HOLD_MS) {
+      servo.detach();
+      // The library stops toggling a detached pin, possibly mid-pulse; force
+      // it LOW so the servo doesn't see a stuck-high signal.
+      digitalWrite(pin, LOW);
+    }
+#else
+    (void)now;
+#endif
   }
 };
 
@@ -155,4 +178,8 @@ void setup() {
 
 void loop() {
   pollSerial();
+
+  const unsigned long now = millis();
+  pan.update(now);
+  tilt.update(now);
 }

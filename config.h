@@ -45,7 +45,7 @@
 #define PAN_INVERT    0
 
 #define TILT_MIN_DEG  0.0f
-#define TILT_MAX_DEG  120.0f
+#define TILT_MAX_DEG  110.0f
 #define TILT_INVERT   1        // +1.0 -> TILT_MIN_DEG, -1.0 -> TILT_MAX_DEG
 
 // ---------------------------------------------------------------------------
@@ -62,5 +62,17 @@
 // ---------------------------------------------------------------------------
 #define SERVO_MIN_US  544
 #define SERVO_MAX_US  2400
+
+// ---------------------------------------------------------------------------
+//  Power saving / anti-jitter
+//  When enabled, each servo is attached only while moving: it is attached on
+//  a new command, kept attached for SERVO_HOLD_MS so it can reach the target,
+//  then detached (pin held LOW). A detached servo draws idle current only and
+//  cannot jitter, but it also has NO holding torque, so a loaded axis (e.g.
+//  tilt under gravity) may sag. Increase SERVO_HOLD_MS if large moves stop
+//  short. Continuous command streams keep the servo attached.
+// ---------------------------------------------------------------------------
+#define DETACH_WHEN_IDLE  1
+#define SERVO_HOLD_MS     600
 
 #endif // PAN_TILT_CONFIG_H

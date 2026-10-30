@@ -52,8 +52,11 @@ All tunables live in [`config.h`](config.h). Edit it and re-upload; there's no n
 | `ENABLE_ERROR_REPLY` / `ERROR_STRING` | `0` / `"ERR"` | Reply to unparseable or overlong lines                  |
 | `LINE_BUFFER_SIZE`                    | `32`          | Max command length                                      |
 | `PRINT_BANNER`                        | `1`           | Print usage text on boot                                |
+| `DETACH_WHEN_IDLE` / `SERVO_HOLD_MS`  | `1` / `600`   | Detach servos after a move to stop jitter and save power |
 
 Invalid limits are caught at compile time.
+
+> **Note:** with `DETACH_WHEN_IDLE` on, a servo has no holding torque between commands, so a loaded axis may sag. Set it to `0` if the tilt axis drops under load. Re-sending the same command re-attaches the servo and moves it back into place.
 
 ---
 

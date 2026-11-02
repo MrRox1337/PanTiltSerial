@@ -1,17 +1,17 @@
 # Pan-Tilt Robot: Communication Guide
 
-Your OpenCV program controls the pan-tilt robot over a USB serial connection. This guide covers everything your program needs to do to talk to it. Treat the robot as a black box: send it commands in the format below and it points where you tell it.
+Your OpenCV program controls the pan-tilt robot over a USB serial connection. This guide covers everything your program needs to do to talk to it. Treat the robot as a black box: send it commands in the format below and it points where you tell it. **Do not upload a new code to the robot!**
 
 ---
 
 ## 1. Connection settings
 
-| Setting      | Value                                                                       |
-| :----------- | :-------------------------------------------------------------------------- |
-| Interface    | USB serial (the robot appears as a serial / COM port)                       |
-| Baud rate    | **115200**                                                                  |
-| Data format  | 8 data bits, no parity, 1 stop bit (8N1)                                    |
-| Flow control | None                                                                        |
+| Setting      | Value                                                                           |
+| :----------- | :------------------------------------------------------------------------------ |
+| Interface    | USB serial (the robot appears as a serial / COM port)                           |
+| Baud rate    | **115200**                                                                      |
+| Data format  | 8 data bits, no parity, 1 stop bit (8N1)                                        |
+| Flow control | None                                                                            |
 | Port name    | Windows: `COM3`, `COM4`, … · Linux: `/dev/ttyACM0` · macOS: `/dev/cu.usbmodem…` |
 
 ### Opening the port
@@ -33,25 +33,25 @@ Each command is **one line of plain ASCII text** with two numbers:
 <pan> <tilt>\n
 ```
 
-| Part     | Rule                                                          |
-| :------- | :------------------------------------------------------------ |
-| `<pan>`  | Decimal number from **-1.0 to 1.0**                           |
-| `<tilt>` | Decimal number from **-1.0 to 1.0**                           |
-| Separator | A single space between the two numbers                       |
-| Ending   | A newline character, `\n` (`\r\n` is also accepted)           |
-| Length   | At most 32 characters, not counting the newline               |
+| Part      | Rule                                                |
+| :-------- | :-------------------------------------------------- |
+| `<pan>`   | Decimal number from **-1.0 to 1.0**                 |
+| `<tilt>`  | Decimal number from **-1.0 to 1.0**                 |
+| Separator | A single space between the two numbers              |
+| Ending    | A newline character, `\n` (`\r\n` is also accepted) |
+| Length    | At most 32 characters, not counting the newline     |
 
 Use plain decimal notation such as `0.25`, `-0.5` or `1`. Don't use scientific notation (`1e-3`), and don't add units, labels or brackets. Two or three decimal places is plenty.
 
 ### Examples
 
-| You send          | Meaning                                              |
-| :---------------- | :--------------------------------------------------- |
-| `0 0\n`           | Point straight ahead (the centre / home position)     |
-| `1 0\n`           | Pan fully to one side, tilt centred                  |
-| `-1 0\n`          | Pan fully to the other side, tilt centred            |
-| `0 1\n`           | Tilt fully one way, pan centred                      |
-| `0.25 -0.5\n`     | Pan a quarter of the way, tilt halfway the other way  |
+| You send      | Meaning                                              |
+| :------------ | :--------------------------------------------------- |
+| `0 0\n`       | Point straight ahead (the centre / home position)    |
+| `1 0\n`       | Pan fully to one side, tilt centred                  |
+| `-1 0\n`      | Pan fully to the other side, tilt centred            |
+| `0 1\n`       | Tilt fully one way, pan centred                      |
+| `0.25 -0.5\n` | Pan a quarter of the way, tilt halfway the other way |
 
 ---
 
@@ -79,12 +79,12 @@ OK
 
 There is **no newline** after `OK`. Read exactly 2 bytes. Don't use a "read line" function, or it will wait until it times out.
 
-| Situation                                      | Reply          |
-| :--------------------------------------------- | :------------- |
-| Valid command                                  | `OK`           |
-| Line can't be read as two numbers              | *Nothing*      |
-| Line longer than 32 characters                 | *Nothing*      |
-| Empty line                                     | *Nothing*      |
+| Situation                         | Reply     |
+| :-------------------------------- | :-------- |
+| Valid command                     | `OK`      |
+| Line can't be read as two numbers | _Nothing_ |
+| Line longer than 32 characters    | _Nothing_ |
+| Empty line                        | _Nothing_ |
 
 `OK` means the robot **received and accepted** the command. It does **not** mean the robot has finished moving. A large move takes a fraction of a second to complete.
 
@@ -156,16 +156,16 @@ The Serial Monitor shows `OK` replies run together (`OKOKOK`) because they have 
 
 ## 8. Troubleshooting
 
-| Symptom                                    | Likely cause / fix                                                                  |
-| :----------------------------------------- | :---------------------------------------------------------------------------------- |
-| No `OK` and no movement                    | Wrong baud rate, missing `\n`, or commands sent within 2 s of opening the port       |
-| Garbled text when the port opens           | Startup output. Clear the input buffer after the 2 s wait                          |
-| Program freezes waiting for a reply        | Using a "read line" call. Read exactly 2 bytes with a timeout                      |
-| Robot restarts / returns to centre at random | Your program is reopening the port. Open it once and keep it open                |
-| "Port busy" / "access denied"              | Another program (often the Serial Monitor) has the port open. Close it first       |
-| Robot moves the wrong way                  | Sign of pan or tilt reversed in your mapping. Re-check with section 7               |
-| Robot moves but stops short of the target  | Your mapping from image coordinates to -1…1 is scaled wrong                         |
-| Axis droops when you stop sending          | Expected. Keep sending commands to hold position (section 5)                        |
+| Symptom                                      | Likely cause / fix                                                             |
+| :------------------------------------------- | :----------------------------------------------------------------------------- |
+| No `OK` and no movement                      | Wrong baud rate, missing `\n`, or commands sent within 2 s of opening the port |
+| Garbled text when the port opens             | Startup output. Clear the input buffer after the 2 s wait                      |
+| Program freezes waiting for a reply          | Using a "read line" call. Read exactly 2 bytes with a timeout                  |
+| Robot restarts / returns to centre at random | Your program is reopening the port. Open it once and keep it open              |
+| "Port busy" / "access denied"                | Another program (often the Serial Monitor) has the port open. Close it first   |
+| Robot moves the wrong way                    | Sign of pan or tilt reversed in your mapping. Re-check with section 7          |
+| Robot moves but stops short of the target    | Your mapping from image coordinates to -1…1 is scaled wrong                    |
+| Axis droops when you stop sending            | Expected. Keep sending commands to hold position (section 5)                   |
 
 ---
 

@@ -73,6 +73,6 @@
 //  short. Continuous command streams keep the servo attached.
 // ---------------------------------------------------------------------------
 #define DETACH_WHEN_IDLE  1
-#define SERVO_HOLD_MS     600
+#define SERVO_HOLD_MS     1000
 
 #endif // PAN_TILT_CONFIG_H

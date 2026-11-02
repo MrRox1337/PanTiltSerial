@@ -6,6 +6,8 @@ This Arduino sketch enables **serial control** of a two-axis **pan-tilt mechanis
 
 The center position is defined by sending **`0.0 0.0`**.
 
+> **Students:** see [usage.md](usage.md) for the communication protocol.
+
 ---
 
 ## Authors
@@ -44,7 +46,7 @@ All tunables live in [`config.h`](config.h). Edit it and re-upload; there's no n
 | :------------------------------------ | :------------ | :------------------------------------------------------ |
 | `BAUD_RATE`                           | `115200`      | Serial speed                                            |
 | `PAN_MIN_DEG` / `PAN_MAX_DEG`         | `0` / `170`   | Pan angle range (degrees)                               |
-| `TILT_MIN_DEG` / `TILT_MAX_DEG`       | `0` / `120`   | Tilt angle range (degrees)                              |
+| `TILT_MIN_DEG` / `TILT_MAX_DEG`       | `0` / `110`   | Tilt angle range (degrees)                              |
 | `PAN_INVERT` / `TILT_INVERT`          | `0` / `1`     | Reverse an axis' direction                              |
 | `PAN_HOME` / `TILT_HOME`              | `0.0` / `0.0` | Boot position in normalized units                       |
 | `SERVO_MIN_US` / `SERVO_MAX_US`       | `544`/`2400`  | Pulse width for 0°/180° (Servo library defaults)        |
@@ -52,7 +54,7 @@ All tunables live in [`config.h`](config.h). Edit it and re-upload; there's no n
 | `ENABLE_ERROR_REPLY` / `ERROR_STRING` | `0` / `"ERR"` | Reply to unparseable or overlong lines                  |
 | `LINE_BUFFER_SIZE`                    | `32`          | Max command length                                      |
 | `PRINT_BANNER`                        | `1`           | Print usage text on boot                                |
-| `DETACH_WHEN_IDLE` / `SERVO_HOLD_MS`  | `1` / `600`   | Detach servos after a move to stop jitter and save power |
+| `DETACH_WHEN_IDLE` / `SERVO_HOLD_MS`  | `1` / `1000`  | Detach servos after a move to stop jitter and save power |
 
 Invalid limits are caught at compile time.
 
@@ -81,11 +83,11 @@ The input format is: `[pan_value] [tilt_value]\n` (e.g., `0.5 -0.25`).
 | Input Value | Pan Angle (Pin 5) | Tilt Angle (Pin 6) | Notes                                       |
 | :---------- | :---------------- | :----------------- | :------------------------------------------ |
 | **1.0**     | **170°**          | **0°**             | Maximum extent (Pan), Minimum extent (Tilt) |
-| **0.0**     | **85°**           | **60°**            | **Center Position** (Pan and Tilt)          |
-| **-1.0**    | **0°**            | **120°**           | Minimum extent (Pan), Maximum extent (Tilt) |
+| **0.0**     | **85°**           | **55°**            | **Center Position** (Pan and Tilt)          |
+| **-1.0**    | **0°**            | **110°**           | Minimum extent (Pan), Maximum extent (Tilt) |
 
 - **Pan**: A value of `1.0` maps to **170°**, `0.0` to **85°**, and `-1.0` to **0°**.
-- **Tilt**: A value of `1.0` maps to **0°**, `0.0` to **60°**, and `-1.0` to **120°**. Note the inverse mapping.
+- **Tilt**: A value of `1.0` maps to **0°**, `0.0` to **55°**, and `-1.0` to **110°**. Note the inverse mapping.
 
 ### Example Serial Output
 
